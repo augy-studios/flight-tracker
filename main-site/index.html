@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-color-theme="classic" data-mode="light">
 
 <head>
     <!-- Google tag (gtag.js) -->
@@ -20,18 +20,20 @@
     <link rel="manifest" href="/manifest.json" />
 
     <meta charset="utf-8">
-    <title>Flight Tracker | UwU Apps</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Track flights in real-time.">
+    <title>uwuFlights | Live Flight & Aircraft Spotting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Point your phone at the sky and find that flight. Live worldwide ADS-B aircraft tracking for plane spotters.">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Flight Tracker | UwU Apps" />
+    <meta property="og:title" content="uwuFlights | Live Flight & Aircraft Spotting" />
     <meta property="og:site_name" content="UwU Apps" />
-    <meta property="og:description" content="Track flights in real-time." />
+    <meta property="og:description" content="Point your phone at the sky and find that flight. Live worldwide ADS-B aircraft tracking for plane spotters." />
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jua">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jua&display=swap">
     <link rel="stylesheet" href="/style.css">
     <meta name="theme-color" content="#ccffcc" />
+    <meta name="color-scheme" content="light">
 
     <!-- Embed Image -->
     <link rel="apple-touch-icon" href="/UFL-main.png">
@@ -40,22 +42,163 @@
     <meta name="twitter:card" content="summary">
     <meta name="twitter:image:src" content="/UFL-main.png">
     <meta property="og:image" content="/UFL-main.png" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script defer="" src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"></script>
 </head>
 
 <body>
-    uwuFlights
+    <div id="app">
+        <header class="topbar glass">
+            <div class="brand">
+                <span class="brand-icon" data-icon="planeFilled"></span>
+                <span class="brand-name">uwuFlights</span>
+            </div>
+            <div class="topbar-actions">
+                <button id="themeBtn" class="icon-btn" type="button" aria-haspopup="dialog" aria-label="Open theme settings">
+                    <span data-icon="palette"></span>
+                </button>
+                <a id="coffeeBtn" class="icon-btn coffee-btn" href="https://donate.stripe.com/28o2akeAr3hv0DK6oo"
+                    target="_blank" rel="noopener noreferrer" aria-label="Buy Augy a Coffee">
+                    <span data-icon="coffee"></span>
+                    <span class="coffee-label">Buy Augy a Coffee</span>
+                </a>
+            </div>
+        </header>
 
-    <script src="/script.js"></script>
+        <main class="content">
+            <section id="statusBar" class="status-bar glass">
+                <div class="status-left">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Locating you&hellip;</span>
+                </div>
+                <div class="status-actions">
+                    <button id="manualLocationBtn" class="text-btn" type="button">Set location</button>
+                    <button id="refreshBtn" class="icon-btn small" type="button" aria-label="Refresh">
+                        <span data-icon="refresh"></span>
+                    </button>
+                </div>
+            </section>
+
+            <nav class="tabs glass" role="tablist" aria-label="Views">
+                <button class="tab active" role="tab" aria-selected="true" data-tab="radar" type="button">
+                    <span data-icon="radar"></span> Radar
+                </button>
+                <button class="tab" role="tab" aria-selected="false" data-tab="list" type="button">
+                    <span data-icon="list"></span> Nearby
+                </button>
+                <button class="tab" role="tab" aria-selected="false" data-tab="favourites" type="button">
+                    <span data-icon="heart"></span> Favourites
+                </button>
+            </nav>
+
+            <section id="panel-radar" class="panel active" role="tabpanel">
+                <div class="radar-card glass">
+                    <div class="radar-card-head">
+                        <h2>Point &amp; search</h2>
+                        <button id="compassBtn" class="chip-btn" type="button">Enable compass</button>
+                    </div>
+                    <div id="radarRing" class="radar-ring">
+                        <div class="radar-ring-line n"></div>
+                        <div class="radar-ring-line e"></div>
+                        <div class="radar-ring-track outer"></div>
+                        <div class="radar-ring-track inner"></div>
+                        <div class="radar-center" data-icon="locate"></div>
+                        <span class="radar-label n">N</span>
+                        <span class="radar-label e">E</span>
+                        <span class="radar-label s">S</span>
+                        <span class="radar-label w">W</span>
+                        <div id="radarMarkers" class="radar-markers"></div>
+                    </div>
+                    <p id="radarHint" class="hint">Grant location access to see aircraft plotted around you.</p>
+                </div>
+                <div id="radarList" class="card-list"></div>
+            </section>
+
+            <section id="panel-list" class="panel" role="tabpanel" hidden>
+                <div class="list-toolbar glass">
+                    <span id="resultCount">0 aircraft nearby</span>
+                    <span id="sourceBadge" class="badge"></span>
+                </div>
+                <div id="nearbyList" class="card-list"></div>
+            </section>
+
+            <section id="panel-favourites" class="panel" role="tabpanel" hidden>
+                <h2 class="section-title">Favourite flights</h2>
+                <div id="favFlights" class="card-list"></div>
+                <h2 class="section-title">Favourite aircraft</h2>
+                <div id="favAircraft" class="card-list"></div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p class="footer-line">Made with <span class="footer-heart" data-icon="heartFilled" aria-label="love"></span> by Augy</p>
+            <p class="footer-line footer-sources">Aircraft data from
+                <a href="https://api.adsb.lol/docs" target="_blank" rel="noopener noreferrer">adsb.lol</a> and
+                <a href="https://openskynetwork.github.io/opensky-api/rest.html" target="_blank" rel="noopener noreferrer">OpenSky Network</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Theme picker modal -->
+    <div id="themeModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
+        <div class="modal glass">
+            <div class="modal-head">
+                <h2 id="themeModalTitle">Theme</h2>
+                <button class="icon-btn small" data-close-modal="themeModal" type="button" aria-label="Close">
+                    <span data-icon="close"></span>
+                </button>
+            </div>
+            <p class="modal-subtitle">Mode</p>
+            <div class="mode-toggle" id="modeToggle" role="tablist">
+                <button class="mode-btn" data-mode="light" type="button"><span data-icon="sun"></span> Light</button>
+                <button class="mode-btn" data-mode="dark" type="button"><span data-icon="moon"></span> Dark</button>
+            </div>
+            <p class="modal-subtitle">Brand colour</p>
+            <div class="swatch-grid" id="swatchGrid"></div>
+        </div>
+    </div>
+
+    <!-- Manual location modal -->
+    <div id="locationModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="locationModalTitle">
+        <div class="modal glass">
+            <div class="modal-head">
+                <h2 id="locationModalTitle">Set your location</h2>
+                <button class="icon-btn small" data-close-modal="locationModal" type="button" aria-label="Close">
+                    <span data-icon="close"></span>
+                </button>
+            </div>
+            <p class="modal-subtitle">Used to find aircraft near you. Nothing is sent anywhere except our own API.</p>
+            <form id="locationForm" class="location-form">
+                <label>Latitude<input type="number" step="any" id="manualLat" placeholder="e.g. 51.4700" required></label>
+                <label>Longitude<input type="number" step="any" id="manualLon" placeholder="e.g. -0.4543" required></label>
+                <div class="modal-actions">
+                    <button type="button" id="useGpsBtn" class="chip-btn">Use GPS instead</button>
+                    <button type="submit" class="btn">Save location</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aircraft detail modal -->
+    <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="modal glass">
+            <div class="modal-head">
+                <h2 id="detailModalTitle">Aircraft</h2>
+                <button class="icon-btn small" data-close-modal="detailModal" type="button" aria-label="Close">
+                    <span data-icon="close"></span>
+                </button>
+            </div>
+            <div id="detailBody" class="detail-body"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/script.js"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/sw.js');
+            navigator.serviceWorker.register('/sw.js');
         }
     </script>
-    
 </body>
 
 </html>

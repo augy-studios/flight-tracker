@@ -1,7 +1,7 @@
 {
-    "name": "Flight Tracker by UwU Apps",
+    "name": "uwuFlights - Live Flight & Aircraft Spotting",
     "short_name": "uwuFlights",
-    "description": "Track flights in real-time.",
+    "description": "Point your phone at the sky and find that flight. Live worldwide ADS-B aircraft tracking for plane spotters.",
     "icons": [{
             "src": "UFL-192.png",
             "type": "image/png",
@@ -27,8 +27,8 @@
         }
     ],
     "start_url": "/",
-    "theme_color": "#cfc",
-    "background_color": "#cfc",
+    "theme_color": "#ccffcc",
+    "background_color": "#ccffcc",
     "display": "standalone",
     "display_override": ["fullscreen", "minimal-ui", "window-controls-overlay"],
     "orientation": "any",

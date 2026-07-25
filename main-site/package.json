@@ -1,0 +1,10 @@
+{
+  "name": "uwuflights",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "uwuFlights - worldwide live aircraft spotting PWA, deployed on Vercel.",
+  "engines": {
+    "node": ">=18"
+  }
+}

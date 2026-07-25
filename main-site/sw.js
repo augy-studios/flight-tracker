@@ -1,10 +1,19 @@
-const CACHE = "uwuflights-v1";
+const SHELL_CACHE = "uwuflights-shell-v3";
+const API_CACHE = "uwuflights-api-v3";
 
 const ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/script.js",
+  "/js/app.js",
+  "/js/ui.js",
+  "/js/theme.js",
+  "/js/geo.js",
+  "/js/compass.js",
+  "/js/api.js",
+  "/js/favourites.js",
+  "/js/icons.js",
   "/UFL-main.png",
   "/UFL-192.png",
   "/UFL-512.png",
@@ -12,11 +21,13 @@ const ASSETS = [
   "/manifest.json"
 ];
 
+const CURRENT_CACHES = [SHELL_CACHE, API_CACHE];
+
 /* -- Install: cache shell -- */
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE)
+    caches.open(SHELL_CACHE)
     .then(cache => cache.addAll(ASSETS))
     .then(() => self.skipWaiting())
   );
@@ -30,7 +41,7 @@ self.addEventListener('activate', event => {
     .then(keys =>
       Promise.all(
         keys
-        .filter(k => k !== CACHE)
+        .filter(k => !CURRENT_CACHES.includes(k))
         .map(k => caches.delete(k))
       )
     )
@@ -44,35 +55,53 @@ self.addEventListener('fetch', event => {
   const {
     request
   } = event;
+  if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
 
-  // API - network-first
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
+  // Aircraft proxies - network-first, but cached in Cache Storage so the
+  // *same* request (same rounded lat/lon/dist) can be replayed fully
+  // offline, not just re-served from an in-memory map that dies on reload.
+  if (url.pathname === '/api/adsb' || url.pathname === '/api/opensky') {
+    event.respondWith(networkFirstCached(request, API_CACHE, 12));
     return;
   }
 
-  // Google Fonts - cache-first (immutable)
+  // Config endpoint - network-first, short cache fallback.
+  if (url.pathname === '/api/config') {
+    event.respondWith(networkFirstCached(request, API_CACHE, 1));
+    return;
+  }
+
+  // Google Fonts - cache-first (immutable once fetched).
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // static assets - cache-first
+  // App shell / static assets - cache-first.
   event.respondWith(cacheFirst(request));
 });
 
 /* -- Strategies -- */
 
-async function networkFirst(request) {
+async function networkFirstCached(request, cacheName, maxAgeIgnored) {
+  const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
     return response;
   } catch {
+    const cached = await cache.match(request);
+    if (cached) return cached;
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'You appear to be offline.'
+        offline: true,
+        aircraft: [],
+        error: "You're offline and no cached data exists for this request yet."
       }), {
         status: 503,
         headers: {
@@ -90,7 +119,7 @@ async function cacheFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(CACHE);
+      const cache = await caches.open(SHELL_CACHE);
       cache.put(request, response.clone());
     }
     return response;

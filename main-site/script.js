@@ -1,1 +1,1 @@
-// Template
+import "./js/app.js";

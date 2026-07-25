@@ -1,0 +1,34 @@
+# uwuFlights
+
+> Free, worldwide, point-and-search live aircraft tracking progressive web
+> app for plane spotters. Detects the user's location (GPS or manual
+> latitude/longitude) and shows live nearby aircraft on a compass-style
+> radar view or a sortable list, with distance, altitude, speed, and
+> bearing. Users can favourite individual flights (by callsign) or
+> aircraft types (by ICAO type code), synced across devices when signed
+> in, or stored on-device otherwise. Installable, and usable fully
+> offline after the first visit.
+
+uwuFlights is a single-page application; there are no separate content
+pages to crawl beyond the root URL. This file exists to summarise what the
+app does and how it works for language models and other automated
+readers.
+
+## Key facts
+
+- Live aircraft data comes from two sources, queried by point and radius:
+  adsb.lol as the primary source, and OpenSky Network as an automatic
+  fallback if adsb.lol is unavailable.
+- Default theme is light mode with a mint green (#ccffcc) brand colour;
+  users can switch between light/dark mode and seven brand colour options
+  from the theme button in the header.
+- Built with vanilla HTML, CSS, and JavaScript, deployed on Vercel with
+  serverless API proxy functions, and an optional Supabase backend for
+  cross-device favourites.
+- Not affiliated with any airline, airport, or aviation authority; this is
+  an independent, community, plane-spotting tool built by Augy Studios.
+
+## Links
+
+- Live app: https://flights.uwuapps.org/
+- Buy Augy a coffee: https://donate.stripe.com/28o2akeAr3hv0DK6oo

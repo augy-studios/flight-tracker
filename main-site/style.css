@@ -78,6 +78,7 @@ body {
   background-color: color-mix(in srgb, var(--brand) 10%, var(--bg));
   color: var(--ink);
   min-height: 100vh;
+  overflow-x: hidden;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
@@ -131,6 +132,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   font-size: 1.25rem;
   color: var(--brand-ink);
 }
@@ -138,12 +140,20 @@ button:disabled {
 .brand-icon svg {
   width: 26px;
   height: 26px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .icon-btn {
@@ -181,10 +191,16 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 10px 14px;
   font-size: 0.9rem;
 }
-.status-left { display: flex; align-items: center; gap: 8px; }
+.status-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#statusText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .status-dot {
   width: 10px;
   height: 10px;
@@ -196,13 +212,14 @@ button:disabled {
 .status-dot[data-tone="warn"] { background: var(--warn); }
 .status-dot[data-tone="busy"] { background: var(--busy); }
 
-.status-actions { display: flex; align-items: center; gap: 6px; }
+.status-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .text-btn {
   color: var(--brand-ink);
   font-size: 0.85rem;
   text-decoration: underline;
   text-underline-offset: 3px;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -252,8 +269,10 @@ button:disabled {
 .radar-card-head {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 .radar-card-head h2 { font-size: 1.05rem; color: var(--brand-ink); }
 
@@ -263,6 +282,7 @@ button:disabled {
   background: var(--surface-strong);
   border: 1px solid var(--surface-border);
   font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .radar-ring {
@@ -334,8 +354,10 @@ button:disabled {
    ============================================================ */
 .list-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 10px 14px;
   font-size: 0.85rem;
   color: var(--muted);
@@ -345,6 +367,7 @@ button:disabled {
   border-radius: 999px;
   background: var(--surface-strong);
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .card-list {
@@ -612,4 +635,71 @@ body.modal-open { overflow: hidden; }
   color: var(--brand-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* ============================================================
+   Small screens
+   ============================================================ */
+@media (max-width: 480px) {
+  #app {
+    padding: 10px 10px 32px;
+    gap: 10px;
+  }
+
+  .topbar {
+    padding: 10px 12px;
+  }
+
+  .brand {
+    font-size: 1.1rem;
+  }
+
+  .brand-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Coffee button collapses to icon-only so it can't force the topbar
+     to overflow horizontally; the label remains for screen readers via
+     aria-label on the link itself. */
+  .coffee-btn {
+    width: 42px;
+    padding: 0;
+    justify-content: center;
+  }
+  .coffee-label {
+    display: none;
+  }
+
+  .status-bar {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-size: 0.8rem;
+    padding: 9px 4px;
+    gap: 4px;
+  }
+  .tab svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .radar-ring {
+    width: min(78vw, 260px);
+    height: min(78vw, 260px);
+  }
+
+  .ac-card, .fav-card {
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .ac-card-stats {
+    font-size: 0.72rem;
+  }
+
+  .swatch-grid {
+    grid-template-columns: 1fr;
+  }
 }

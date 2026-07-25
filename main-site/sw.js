@@ -1,4 +1,4 @@
-const SHELL_CACHE = "uwuflights-shell-v10";
+const SHELL_CACHE = "uwuflights-shell-v11";
 const API_CACHE = "uwuflights-api-v3";
 
 const ASSETS = [

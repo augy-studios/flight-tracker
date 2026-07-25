@@ -82,9 +82,9 @@ always reads as a heart regardless of the active brand colour.
 ```
 
 Applied to: header, status bar, tab bar, radar card, list toolbar, every
-card in a card list, modals, and the toast. Smaller nested controls
-(buttons, badges, chips) use `--surface-strong` directly instead of
-`.glass`, so they read as a level "above" the card they sit on.
+card in a card list, and modals. Smaller nested controls (buttons,
+badges, chips) use `--surface-strong` directly instead of `.glass`, so
+they read as a level "above" the card they sit on.
 
 ## Shape and spacing conventions
 
@@ -95,6 +95,27 @@ card in a card list, modals, and the toast. Smaller nested controls
 - Icon buttons are square-ish: `42px` standard, `34px` for `.small`.
 - Base layout is a single centred column, `max-width: 720px`, `#app`
   padding `14px` (`10px` under the small-screen breakpoint).
+
+## Toast
+
+A single `#toast` element (`index.html`), shown via `showToast(message,
+tone)` in `js/ui.js`. Notes:
+
+- Pill-shaped (`border-radius: 999px`), fixed to the bottom centre of the
+  screen, `z-index: 60` (above modals' `z-index: 50`).
+- Visually glass-like but doesn't use the `.glass` class: it hand-rolls a
+  similar look (`--surface-strong` background, `--surface-border`
+  border, `backdrop-filter: blur(14px)`) with its own values rather than
+  reusing the primitive, since it needs a pill shape instead of `.glass`'s
+  `20px` radius.
+- `tone` is an optional data attribute (`data-tone="error"` or `"ok"`)
+  that recolours the message text via `--error`/`--ok`; omit it for a
+  neutral/info message.
+- Auto-dismisses after ~3.2s (`toastTimer` in `js/ui.js`); a second
+  `showToast()` call before that resets the timer rather than stacking a
+  second toast, since there's only ever one instance.
+- Animation (fade + slight vertical slide on show/hide) is covered in
+  Motion, below.
 
 ## Icons
 
@@ -131,3 +152,35 @@ icon-only under the breakpoint rather than wrapping its label.
 - Toggling a favourite/setting from a modal updates that control in place
   (e.g. relabels the button, refreshes underlying lists) rather than
   closing the modal; closing is a separate, explicit user action.
+
+## Motion
+
+Everything that opens, closes, or switches state animates; nothing pops in
+or out instantly. Durations are short (150-220ms) so it reads as
+responsive, not slow.
+
+- **Modals** (`.modal-backdrop`/`.modal`): opening/closing is driven purely
+  by JS toggling the existing `.hidden` class (`openModal`/`closeModal` in
+  `js/ui.js`); no JS timing logic needed. CSS handles both directions:
+  the backdrop fades (`opacity`, with `visibility` flipping after the
+  fade so it's not interactive while hidden), and the modal itself
+  scales/translates in (`translateY(14px) scale(0.97)` -> resting state).
+- **Toast** (`#toast`): same pattern as modals, opacity + a small
+  vertical slide, driven by the existing `.hidden` class toggle in
+  `showToast()`.
+- **Tab panels** (`.panel.active`): a one-shot `panel-in` keyframe
+  (fade + slight upward slide) plays when a panel gains `.active`. Only
+  the entrance animates; switching away is an instant `display: none`,
+  which is fine since the user's attention has already moved to the tab
+  they just picked.
+- **Small state changes** (`.tab.active`, `.mode-btn.active`,
+  `.swatch.active`, `.icon-btn:hover`) get a short `background`/`color`/
+  `border-color`/`transform` transition instead of snapping.
+- **Respect `prefers-reduced-motion: reduce`**: a global rule collapses
+  all animation/transition durations to effectively instant for users who
+  request it. Don't add a new animation without confirming it's covered
+  by that rule (anything using `animation-duration`/`transition-duration`
+  already is).
+- When adding a new open/close-style UI element, follow the modal/toast
+  pattern: keep the show/hide toggle a single class flip in JS, put the
+  entrance and exit timing entirely in CSS via that class.

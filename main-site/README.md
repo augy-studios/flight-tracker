@@ -28,6 +28,7 @@ supabase/
   schema.sql            uwuflights_favourites table (service-key access, no Supabase Auth)
 manifest.json / sw.js    PWA manifest + service worker (offline shell + fallback)
 robots.txt / sitemap.xml / llms.txt    crawler and LLM discovery files
+design.md                design system reference (colour tokens, glassmorphism, icon/interaction conventions)
 ```
 
 ## Deploying (Vercel)

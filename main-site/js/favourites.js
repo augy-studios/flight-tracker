@@ -1,14 +1,25 @@
 // Favourites: flights (by callsign) and aircraft (by ICAO type code).
-// Uses Supabase (anonymous auth + RLS) when configured via /api/config,
-// otherwise falls back to localStorage so the app still fully works
-// without a Supabase project attached.
+//
+// There is no Supabase Auth here. Each browser has its own randomly
+// generated device_id (persisted in localStorage) which is sent to
+// /api/favourites; the serverless function is the only thing that holds
+// the Supabase service key, and scopes every query to that device_id.
+// If /api/favourites reports Supabase isn't configured (or is
+// unreachable), favourites fall back to localStorage only, so the app
+// still fully works without a Supabase project attached.
 
-import { fetchPublicConfig } from "./api.js";
-
+const DEVICE_ID_KEY = "uwuflights.deviceId";
 const LOCAL_KEY = "uwuflights.favourites";
-let supabase = null;
-let userId = null;
 let backend = "local";
+
+function getDeviceId() {
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
 
 function readLocal() {
   try {
@@ -23,28 +34,22 @@ function writeLocal(list) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
 }
 
-export async function initFavourites() {
-  const { supabaseUrl, supabaseAnonKey } = await fetchPublicConfig();
-  if (!supabaseUrl || !supabaseAnonKey) {
-    backend = "local";
-    return { backend };
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body) {
+    throw new Error((body && body.error) || `Request failed (${res.status})`);
   }
+  return body;
+}
 
+export async function initFavourites() {
   try {
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    let { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      const { data: signInData, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      userId = signInData.user.id;
-    } else {
-      userId = data.session.user.id;
-    }
-    backend = "supabase";
+    const deviceId = getDeviceId();
+    const body = await fetchJson(`/api/favourites?deviceId=${deviceId}&kind=flight`);
+    backend = body.configured ? "remote" : "local";
   } catch (err) {
-    console.warn("Supabase unavailable, using local favourites instead:", err.message);
+    console.warn("Favourites backend unavailable, using local storage instead:", err.message);
     backend = "local";
   }
   return { backend };
@@ -55,33 +60,31 @@ export function getBackend() {
 }
 
 export async function listFavourites(kind) {
-  if (backend === "supabase") {
-    const { data, error } = await supabase
-      .from("uwuflights_favourites")
-      .select("*")
-      .eq("kind", kind)
-      .order("created_at", { ascending: false });
-    if (error) {
-      console.warn(error.message);
+  if (backend === "remote") {
+    try {
+      const body = await fetchJson(`/api/favourites?deviceId=${getDeviceId()}&kind=${kind}`);
+      return body.favourites.map((f) => ({ ...f, value: f.value, label: f.label }));
+    } catch (err) {
+      console.warn(err.message);
       return [];
     }
-    return data;
   }
   return readLocal().filter((f) => f.kind === kind);
 }
 
 export async function addFavourite(kind, value, label) {
-  if (backend === "supabase") {
-    const { data, error } = await supabase
-      .from("uwuflights_favourites")
-      .insert({ kind, value, label, user_id: userId })
-      .select()
-      .single();
-    if (error) {
-      if (error.code === "23505") return null; // already favourited
-      throw error;
+  if (backend === "remote") {
+    try {
+      const body = await fetchJson("/api/favourites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId: getDeviceId(), kind, value, label }),
+      });
+      return body.favourite;
+    } catch (err) {
+      console.warn(err.message);
+      return null;
     }
-    return data;
   }
   const list = readLocal();
   if (list.some((f) => f.kind === kind && f.value === value)) return null;
@@ -92,9 +95,12 @@ export async function addFavourite(kind, value, label) {
 }
 
 export async function removeFavourite(id) {
-  if (backend === "supabase") {
-    const { error } = await supabase.from("uwuflights_favourites").delete().eq("id", id);
-    if (error) throw error;
+  if (backend === "remote") {
+    try {
+      await fetchJson(`/api/favourites?deviceId=${getDeviceId()}&id=${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.warn(err.message);
+    }
     return;
   }
   writeLocal(readLocal().filter((f) => f.id !== id));

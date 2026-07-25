@@ -18,14 +18,14 @@ js/
   geo.js              geolocation + manual location + haversine/bearing math
   compass.js           device-orientation heading (handles iOS permission prompt)
   api.js               client for /api/adsb + /api/opensky with fallback + caching
-  favourites.js        Supabase (anonymous auth) favourites, with localStorage fallback
+  favourites.js        favourites via /api/favourites (per-device id), with localStorage fallback
 api/
   adsb.js               serverless proxy: adsb.lol (primary aircraft source)
   opensky.js            serverless proxy: OpenSky Network (fallback source)
-  config.js             hands the (RLS-safe) Supabase URL/anon key to the client
-  _cache.js             shared in-memory micro-cache used by the two proxies
+  favourites.js          the only thing that holds the Supabase service key; scopes every query to the caller's device_id
+  _cache.js             shared in-memory micro-cache used by the two aircraft proxies
 supabase/
-  schema.sql            uwuflights_favourites table + RLS policies
+  schema.sql            uwuflights_favourites table (service-key access, no Supabase Auth)
 manifest.json / sw.js    PWA manifest + service worker (offline shell + fallback)
 robots.txt / sitemap.xml / llms.txt    crawler and LLM discovery files
 ```
@@ -39,24 +39,27 @@ robots.txt / sitemap.xml / llms.txt    crawler and LLM discovery files
 4. (Optional, for favourites) set these Environment Variables in the
    Vercel project settings:
    - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_KEY`
 
-   These are read at request time by `api/config.js` and handed to the
-   client. The anon key is safe to expose because access is enforced by
-   Row Level Security (see `supabase/schema.sql`), not by keeping the key
-   secret.
+   These are read server-side, only by `api/favourites.js`. Unlike an anon
+   key, the service key bypasses Row Level Security entirely, so it must
+   never be sent to the client; it isn't, since `api/favourites.js` is the
+   only code that ever touches it. The app has no login: the browser holds
+   a randomly generated `device_id` (in `localStorage`), and every
+   Supabase query is scoped to that `device_id` in `api/favourites.js`
+   itself.
 
 If you skip the Supabase env vars entirely, the app still works; favourites
 just fall back to `localStorage` on that device instead of syncing anywhere.
 
 ## Setting up Supabase (optional, for cross-device favourites)
 
-1. Create a project at supabase.com.
+1. Create a project at supabase.com (or reuse an existing one; uwuFlights
+   only ever touches its own `uwuflights_favourites` table).
 2. In the SQL editor, run `supabase/schema.sql`.
-3. In **Authentication > Providers**, enable **Anonymous Sign-ins**. This is
-   what lets the app persist favourites per-device without a login screen.
-4. Copy the Project URL and `anon` public API key into the Vercel env vars
-   above.
+3. Copy the Project URL and the **service_role** key (Project Settings >
+   API) into the Vercel env vars above. Do not use the `anon` key here;
+   this app is designed around the service key staying server-side.
 
 ## Do I need to host anything on my Debian 13 VPS?
 
@@ -112,9 +115,11 @@ once:
   example, you moved since the last successful fetch), the app still shows
   that last known result, clearly labelled with how old it is (for example,
   "showing aircraft near (lat, lon) from 5 minutes ago").
-- **Favourites:** already work offline by design, since the Supabase client
-  falls back to `localStorage` whenever the network (or Supabase itself)
-  isn't reachable.
+- **Favourites:** reads (`GET /api/favourites`) are cached the same way as
+  the aircraft proxies, and the client falls back to `localStorage`
+  whenever the network, or Supabase itself, isn't reachable. Adding or
+  removing a favourite still needs a live network request, since there's
+  nothing sensible to cache-fallback a write to.
 
 Fonts are loaded from Google Fonts and cached the same way (cache-first)
 after their first successful fetch, so they also render correctly offline

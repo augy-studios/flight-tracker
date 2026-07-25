@@ -116,11 +116,3 @@ export async function fetchNearbyAircraft(lat, lon, distKm = 50) {
     }
   }
 }
-
-export async function fetchPublicConfig() {
-  try {
-    return await fetchJson("/api/config", { timeoutMs: 6000 });
-  } catch {
-    return { supabaseUrl: null, supabaseAnonKey: null };
-  }
-}

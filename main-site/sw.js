@@ -1,4 +1,4 @@
-const SHELL_CACHE = "uwuflights-shell-v3";
+const SHELL_CACHE = "uwuflights-shell-v4";
 const API_CACHE = "uwuflights-api-v3";
 
 const ASSETS = [
@@ -55,21 +55,26 @@ self.addEventListener('fetch', event => {
   const {
     request
   } = event;
-  if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Favourites - reads can fall back to a cached copy offline, but writes
+  // (POST/DELETE) must always hit the network; there's nothing sane to
+  // cache-fallback a mutation to.
+  if (url.pathname === '/api/favourites') {
+    if (request.method === 'GET') {
+      event.respondWith(networkFirstCached(request, API_CACHE));
+    }
+    return;
+  }
+
+  if (request.method !== 'GET') return;
 
   // Aircraft proxies - network-first, but cached in Cache Storage so the
   // *same* request (same rounded lat/lon/dist) can be replayed fully
   // offline, not just re-served from an in-memory map that dies on reload.
   if (url.pathname === '/api/adsb' || url.pathname === '/api/opensky') {
     event.respondWith(networkFirstCached(request, API_CACHE, 12));
-    return;
-  }
-
-  // Config endpoint - network-first, short cache fallback.
-  if (url.pathname === '/api/config') {
-    event.respondWith(networkFirstCached(request, API_CACHE, 1));
     return;
   }
 

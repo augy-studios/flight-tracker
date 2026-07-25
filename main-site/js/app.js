@@ -410,7 +410,8 @@ function showDetail(id) {
       await addFavourite("aircraft", ac.type, ac.type);
     }
     await refreshFavourites();
-    closeModal("detailModal");
+    favTypeBtn.textContent = isFavAircraftType(ac.type) ? "Remove aircraft type favourite" : "Favourite this aircraft type";
+    renderList();
   });
 
   openModal("detailModal");

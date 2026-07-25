@@ -34,6 +34,7 @@ const state = {
 async function boot() {
   initTheme();
   hydrateIcons();
+  updateThemeButtonIcon();
   buildThemeModal();
   wireHeader();
   wireTabs();
@@ -87,6 +88,13 @@ function syncThemeModalState() {
   document.querySelectorAll("#modeToggle .mode-btn").forEach((el) => {
     el.classList.toggle("active", el.dataset.mode === activeMode);
   });
+  updateThemeButtonIcon();
+}
+
+function updateThemeButtonIcon() {
+  const span = document.querySelector("#themeBtn [data-icon]");
+  span.setAttribute("data-icon", getStoredMode() === "dark" ? "moon" : "sun");
+  hydrateIcons(document.getElementById("themeBtn"));
 }
 
 function wireHeader() {
